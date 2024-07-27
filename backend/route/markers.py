@@ -14,53 +14,6 @@ collection.create_index([("geometry", GEOSPHERE)])
 
 markers_router = APIRouter(prefix='/markers')
 
-def get_current_vote(markerID: str) -> int:
-    """Retrieve the current vote count for the given item ID."""
-    try:
-        object_id = ObjectId(markerID)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid item ID: {e}")
-
-    document = collection.find_one({"_id": object_id}, {"properties.vote": 1})
-    
-    if not document:
-        raise HTTPException(status_code=404, detail="Marker not found")
-    
-    # Return the current vote count, default to 0 if not set
-    return document.get("properties", {}).get("vote", 0)
-
-@markers_router.patch("/updateVote/{markerID}", response_model=Dict[str, Any])
-async def update_vote(markerID: str, vote_data: VoteModel = Body(...)):
-    # Retrieve the current vote
-    if vote_data.vote > 1 or vote_data.vote < -1:
-        raise HTTPException(status_code=404, detail="Vote is not valid")
-    elif vote_data.vote == 0:
-        raise HTTPException(status_code=404, detail="Vote is not valid")
-    
-    previous_vote = get_current_vote(markerID) 
-    current_vote = previous_vote + vote_data.vote
-    
-    # Construct the update data
-    update_data = {
-        "properties.vote": current_vote 
-    }
-    
-    # Update the document in the collection
-    result = collection.update_one(
-        {"_id": ObjectId(markerID)},
-        {"$set": update_data}
-    )
-    
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Marker not found")
-    
-    # Return the previous and updated vote values
-    return {
-        "message": "Vote updated successfully",
-        "previous_vote": previous_vote,
-        "updated_vote": current_vote
-    }
-
 @markers_router.get("/{markerID}", response_model=MarkerFeature)
 async def get_single_marker(markerID: str):
     # Retrieve the current vote
@@ -311,6 +264,55 @@ def get_markers_summary(lat: float = Query(..., description="Latitude of the cen
         return geojson
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+def get_current_vote(markerID: str) -> int:
+    """Retrieve the current vote count for the given item ID."""
+    try:
+        object_id = ObjectId(markerID)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid item ID: {e}")
+
+    document = collection.find_one({"_id": object_id}, {"properties.vote": 1})
+    
+    if not document:
+        raise HTTPException(status_code=404, detail="Marker not found")
+    
+    # Return the current vote count, default to 0 if not set
+    return document.get("properties", {}).get("vote", 0)
+
+@markers_router.patch("/updateVote/{markerID}", response_model=Dict[str, Any])
+async def update_vote(markerID: str, vote_data: VoteModel = Body(...)):
+    # Retrieve the current vote
+    if vote_data.vote > 1 or vote_data.vote < -1:
+        raise HTTPException(status_code=404, detail="Vote is not valid")
+    elif vote_data.vote == 0:
+        raise HTTPException(status_code=404, detail="Vote is not valid")
+    
+    previous_vote = get_current_vote(markerID) 
+    current_vote = previous_vote + vote_data.vote
+    
+    # Construct the update data
+    update_data = {
+        "properties.vote": current_vote 
+    }
+    
+    # Update the document in the collection
+    result = collection.update_one(
+        {"_id": ObjectId(markerID)},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Marker not found")
+    
+    # Return the previous and updated vote values
+    return {
+        "message": "Vote updated successfully",
+        "previous_vote": previous_vote,
+        "updated_vote": current_vote
+    }
+
     
 
 
