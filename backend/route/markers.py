@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 from model.markers import MarkerSummary,MarkerFeature,MarkerFeatureCollection
-from fastapi import Query, HTTPException
+from fastapi import Query, HTTPException,Body
 from pymongo import GEOSPHERE
 from database.initialize import db
-from typing import List, Union
+from typing import List, Union, Annotated
 
 collection = db['marker_collection']
 
@@ -13,8 +13,91 @@ collection.create_index([("geometry", GEOSPHERE)])
 
 markers_router = APIRouter(prefix='/markers')
 
+
+
 @markers_router.post("/create")
-async def post_markers(data: Union[MarkerFeature, List[MarkerFeature]]):
+async def post_markers(data: Annotated[MarkerFeature,Body(
+            openapi_examples = {
+                "example1": {
+                    "summary": "Example for flood Marker type",
+                    "description": "A sample body if you wanted to add flood marker",
+                    "value": {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [-73.9654, 40.7829]
+                        },
+                        "properties": {
+                            "markerType": "flood",
+                            "attribute" : {
+                            "waterOn": 1,
+                            "electricOn": 0,
+                            "isSanitation":0,
+                            "imageUrl": "link",
+                            "Description":"this is flood"}
+                        }
+                    }
+                },
+                "example2": {
+                    "summary": "Example for medicine Marker type",
+                    "description": "A sample body if you wanted to add medicine marker",
+                    "value": {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [-73.9654, 40.7829]
+                        },
+                        "properties": {
+                            "markerType": "medicine",
+                            "attribute" : {
+                            "pack": 1,
+                            "medicineName": 0,
+                            "imageUrl": "link",
+                            "Description":"This is drug"
+                            }
+                        }
+                    }
+                },
+                "example3": {
+                    "summary": "Example for food Marker type",
+                    "description": "A sample body if you wanted to add food marker",
+                    "value": {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [-73.9654, 40.7829]
+                        },
+                        "properties": {
+                            "markerType": "food",
+                            "attribute" : {
+                            "package": 1,
+                            "imageUrl": "link",
+                            "Description":"this is food"}
+                        }
+                    }
+                },
+                "example4": {
+                    "summary": "Example for safe house Marker type",
+                    "description": "A sample body if you wanted to add safe house marker",
+                    "value": {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [-73.9654, 40.7829]
+                        },
+                        "properties": {
+                            "markerType": "safe_house",
+                            "attribute" : {
+                            "spaceAvailable": 1,
+                            "imageUrl": "link",
+                            "Description":"this is food"}
+                        }
+                    }
+                }
+            }
+        )
+    ]
+):
     try:
         if isinstance(data, list):
             data_to_insert = [item.model_dump() for item in data]
@@ -174,4 +257,3 @@ def get_markers_summary(lat: float = Query(..., description="Latitude of the cen
         return geojson
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

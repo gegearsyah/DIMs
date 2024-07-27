@@ -7,8 +7,9 @@ class Point(BaseModel):
 
 class MarkerFeature(BaseModel):
     type: str
-    geometry: Dict[str, Any]
-    properties: Dict[str, Any]
+    geometry: Dict[str, Any] 
+    properties: Dict[str, Any] 
+
 
 class MarkerSummary(BaseModel):
     markerType: str
