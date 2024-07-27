@@ -244,70 +244,140 @@ def get_markers_summary(lat: float = Query(..., description="Latitude of the cen
 
         # Convert MongoDB results to GeoJSON format
         features = []
+        
+        if markerType == "flood":
+            electricity = 0
+            TotalElectricity = 0
+            water = 0
+            TotalWater = 0
+            sanitation = 0
+            TotalSanitation = 0
 
-        electricity = 0
-        TotalElectricity = 0
-        water = 0
-        TotalWater = 0
-        sanitation = 0
-        TotalSanitation = 0
+            for result in results:
+                
+                result['_id'] = str(result['_id'])
+                features.append({
+                    "id" : result['_id'],
+                    "properties": result['properties']['attribute']
+                }
+                )
 
-        for result in results:
-            
-            result['_id'] = str(result['_id'])
-            features.append({
-                "id" : result['_id'],
-                "properties": result['properties']['attribute']
-            }
-            )
+                if result['properties']['attribute']['waterOn'] == 1:
+                    water = water + 1
+                    TotalWater = TotalWater + 1
+                else:
+                    TotalWater = TotalWater + 1
+                if result['properties']['attribute']['electricOn'] == 1:
+                    electricity = electricity + 1
+                    TotalElectricity = TotalElectricity + 1
+                else:
+                    TotalElectricity = TotalElectricity + 1
+                if result['properties']['attribute']['isSanitation'] == 1:
+                    sanitation = sanitation + 1
+                    TotalSanitation = TotalSanitation + 1
+                else:
+                    TotalSanitation = TotalSanitation + 1
 
-            if result['properties']['attribute']['waterOn'] == 1:
-                water = water + 1
-                TotalWater = TotalWater + 1
-            else:
-                TotalWater = TotalWater + 1
-            if result['properties']['attribute']['electricOn'] == 1:
-                electricity = electricity + 1
-                TotalElectricity = TotalElectricity + 1
-            else:
-                TotalElectricity = TotalElectricity + 1
-            if result['properties']['attribute']['isSanitation'] == 1:
-                sanitation = sanitation + 1
-                TotalSanitation = TotalSanitation + 1
-            else:
-                TotalSanitation = TotalSanitation + 1
-
-        waterOn = False
-        electricOn = False
-        isSanitation = False
-
-        if (TotalWater-water < water):
-            waterOn = True
-        else:
             waterOn = False
-
-        if (TotalElectricity-electricity < electricity):
-            electricOn = True
-        else:
             electricOn = False
-
-        if (TotalSanitation-sanitation < sanitation):
-            isSanitation = True
-        else:
             isSanitation = False
 
-        geojson = {
-            "type": "FeatureCollection",
-            "markerType": markerType,
-            "attributes": {
-                "waterOn":waterOn ,
-                "electricOn":electricOn ,
-                "isSanitation":isSanitation
-            },
-            "data": features
-        }
+            if (TotalWater-water < water):
+                waterOn = True
+            else:
+                waterOn = False
 
-        return geojson
+            if (TotalElectricity-electricity < electricity):
+                electricOn = True
+            else:
+                electricOn = False
+
+            if (TotalSanitation-sanitation < sanitation):
+                isSanitation = True
+            else:
+                isSanitation = False
+
+            geojson = {
+                "type": "FeatureCollection",
+                "markerType": markerType,
+                "attributes": {
+                    "waterOn":waterOn ,
+                    "electricOn":electricOn ,
+                    "isSanitation":isSanitation
+                },
+                "data": features
+            }
+            return geojson
+        
+        elif markerType == 'medicine':
+            pack = 0
+            for result in results:
+                
+                result['_id'] = str(result['_id'])
+                features.append({
+                    "id" : result['_id'],
+                    "properties": result['properties']['attribute']
+                    }
+                )
+                pack = pack + result['properties']['attribute']['pack']
+          
+
+            geojson = {
+                "type": "FeatureCollection",
+                "markerType": markerType,
+                "attributes": {
+                    "totalMedicine":pack ,
+                },
+                "data": features
+            }
+            return geojson
+            
+        elif markerType == 'food':
+            package = 0
+            for result in results:
+                
+                result['_id'] = str(result['_id'])
+                features.append({
+                    "id" : result['_id'],
+                    "properties": result['properties']['attribute']
+                    }
+                )
+                package = package + result['properties']['attribute']['package']
+          
+
+            geojson = {
+                "type": "FeatureCollection",
+                "markerType": markerType,
+                "attributes": {
+                    "totalFood":package,
+                },
+                "data": features
+            }
+            return geojson
+
+        elif markerType == 'safe house':
+            spaceAvailable = 0
+            for result in results:
+                
+                result['_id'] = str(result['_id'])
+                features.append({
+                    "id" : result['_id'],
+                    "properties": result['properties']['attribute']
+                    }
+                )
+                spaceAvailable = spaceAvailable + result['properties']['attribute']['spaceAvailable']
+
+            geojson = {
+                "type": "FeatureCollection",
+                "markerType": markerType,
+                "attributes": {
+                    "totalSpaceAvailable":spaceAvailable,
+                },
+                "data": features
+            }
+            return geojson
+        else:
+            raise HTTPException(status_code=404, detail="This marker summary is not available")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
