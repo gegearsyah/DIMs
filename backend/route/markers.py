@@ -24,7 +24,7 @@ def get_current_vote(markerID: str) -> int:
     document = collection.find_one({"_id": object_id}, {"properties.vote": 1})
     
     if not document:
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise HTTPException(status_code=404, detail="Marker not found")
     
     # Return the current vote count, default to 0 if not set
     return document.get("properties", {}).get("vote", 0)
@@ -52,7 +52,7 @@ async def update_vote(markerID: str, vote_data: VoteModel = Body(...)):
     )
     
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise HTTPException(status_code=404, detail="Marker not found")
     
     # Return the previous and updated vote values
     return {
@@ -60,6 +60,20 @@ async def update_vote(markerID: str, vote_data: VoteModel = Body(...)):
         "previous_vote": previous_vote,
         "updated_vote": current_vote
     }
+
+@markers_router.get("/{markerID}", response_model=MarkerFeature)
+async def get_single_marker(markerID: str):
+    # Retrieve the current vote
+   
+    
+    result = collection.find_one({"_id": ObjectId(markerID)}, {})
+    
+    if result is None:
+        raise HTTPException(status_code=404, detail="Marker not found")
+    
+    # Return the previous and updated vote values
+    return result
+
 @markers_router.post("/create")
 async def post_markers(data: Annotated[MarkerFeature,Body(
             openapi_examples = {
@@ -152,9 +166,6 @@ async def post_markers(data: Annotated[MarkerFeature,Body(
             }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-
 @markers_router.get("/", response_model=MarkerFeatureCollection)
 def get_markers(lat: float = Query(..., description="Latitude of the center point"),
                  lon: float = Query(..., description="Longitude of the center point"),
