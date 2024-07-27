@@ -22,3 +22,4 @@ class MarkerFeatureCollection(BaseModel):
 
 class VoteModel(BaseModel):
     vote: int
+    phone_number: str

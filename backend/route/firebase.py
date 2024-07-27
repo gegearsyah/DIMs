@@ -1,16 +1,11 @@
-import firebase_admin
-from firebase_admin import credentials, messaging
-from fastapi import FastAPI, HTTPException, Body
+from firebase.initialize import messaging
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from database.initialize import db
 
-firebase_router = FastAPI()
+firebase_router  = APIRouter(prefix='/notification')
 
-# Path to your service account key
-SERVICE_ACCOUNT_KEY_PATH = "path/to/your/firebase-service-account.json"
-
-# Initialize Firebase Admin SDK
-cred = credentials.Certificate(SERVICE_ACCOUNT_KEY_PATH)
-firebase_admin.initialize_app(cred)
+UserCollection = db['users']
 
 # Pydantic model for notification data
 class NotificationModel(BaseModel):
@@ -18,16 +13,21 @@ class NotificationModel(BaseModel):
     body: str
     token: str  # FCM device registration token
 
-@app.post("/send_notification")
-async def send_notification(notification: NotificationModel):
+@firebase_router.post("/send_notification")
+async def send_emergency_notification(phone_number: str):
+    user_data = UserCollection.find_one({"phone_number": phone_number}, {})
+    
+    if user_data is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    
     try:
         # Create a message to send to the device
         message = messaging.Message(
             notification=messaging.Notification(
-                title=notification.title,
-                body=notification.body,
+                title="Emergency!",
+                body="USER WITH PHONE NUMBER" + user_data.get('phone_number') + " NEED YOUR IMMEDIATE ACTION",
             ),
-            token=notification.token,
+            token="",
         )
 
         # Send the message
@@ -35,8 +35,3 @@ async def send_notification(notification: NotificationModel):
         return {"message": "Notification sent successfully", "response": response}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-# Running the application
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
