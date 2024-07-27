@@ -1,4 +1,4 @@
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, UploadFile,HTTPException
 from typing import List
 import imghdr
 import uuid
