@@ -1,9 +1,10 @@
 from fastapi import APIRouter
-from model.markers import MarkerSummary,MarkerFeature,MarkerFeatureCollection
+from model.markers import MarkerSummary,MarkerFeature,MarkerFeatureCollection,VoteModel
 from fastapi import Query, HTTPException,Body
 from pymongo import GEOSPHERE
 from database.initialize import db
-from typing import List, Union, Annotated
+from typing import Annotated, Dict, Any
+from bson import ObjectId
 
 collection = db['marker_collection']
 
@@ -13,8 +14,52 @@ collection.create_index([("geometry", GEOSPHERE)])
 
 markers_router = APIRouter(prefix='/markers')
 
+def get_current_vote(markerID: str) -> int:
+    """Retrieve the current vote count for the given item ID."""
+    try:
+        object_id = ObjectId(markerID)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid item ID: {e}")
 
+    document = collection.find_one({"_id": object_id}, {"properties.vote": 1})
+    
+    if not document:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    # Return the current vote count, default to 0 if not set
+    return document.get("properties", {}).get("vote", 0)
 
+@markers_router.patch("/updateVote/{markerID}", response_model=Dict[str, Any])
+async def update_vote(markerID: str, vote_data: VoteModel = Body(...)):
+    # Retrieve the current vote
+    if vote_data.vote > 1 or vote_data.vote < -1:
+        raise HTTPException(status_code=404, detail="Vote is not valid")
+    elif vote_data.vote == 0:
+        raise HTTPException(status_code=404, detail="Vote is not valid")
+    
+    previous_vote = get_current_vote(markerID) 
+    current_vote = previous_vote + vote_data.vote
+    
+    # Construct the update data
+    update_data = {
+        "properties.vote": current_vote 
+    }
+    
+    # Update the document in the collection
+    result = collection.update_one(
+        {"_id": ObjectId(markerID)},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    # Return the previous and updated vote values
+    return {
+        "message": "Vote updated successfully",
+        "previous_vote": previous_vote,
+        "updated_vote": current_vote
+    }
 @markers_router.post("/create")
 async def post_markers(data: Annotated[MarkerFeature,Body(
             openapi_examples = {
@@ -99,14 +144,12 @@ async def post_markers(data: Annotated[MarkerFeature,Body(
     ]
 ):
     try:
-        if isinstance(data, list):
-            data_to_insert = [item.model_dump() for item in data]
-            result = collection.insert_many(data_to_insert)
-            return data
-        else:
-            data_to_insert = data.model_dump()
-            result = collection.insert_one(data_to_insert)
-            return  data
+        data_to_insert = data.model_dump()
+        result = collection.insert_one(data_to_insert)
+        return {
+            "id" : str(result.inserted_id),
+            "status":"ok"
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -257,3 +300,6 @@ def get_markers_summary(lat: float = Query(..., description="Latitude of the cen
         return geojson
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+

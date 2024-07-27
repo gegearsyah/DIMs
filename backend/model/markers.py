@@ -19,3 +19,6 @@ class MarkerSummary(BaseModel):
 class MarkerFeatureCollection(BaseModel):
     type: str = "FeatureCollection"
     features: List[MarkerFeature]
+
+class VoteModel(BaseModel):
+    vote: int
