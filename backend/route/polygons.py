@@ -1,8 +1,14 @@
 from fastapi import APIRouter
 from model.polygons import PolygonFeatureCollection
 from fastapi import Query, HTTPException
-from database.initialize import collection
+from pymongo import GEOSPHERE
+from database.initialize import db
 
+collection = db['geo_collection']
+
+# Ensure the collection has a 2dsphere index
+collection.create_index([("geometry", GEOSPHERE)])
+  
 
 polygons_router = APIRouter(prefix='/polygons')
 
