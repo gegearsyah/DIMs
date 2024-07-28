@@ -165,7 +165,7 @@ def get_markers_summary(lat: float = Query(..., description="Latitude of the cen
             }
             return geojson
 
-        elif markerType == 'safe house':
+        elif markerType == 'safe_house':
             spaceAvailable = 0
             for result in results:
                 
