@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">DIMs</string>
+    <string name="mapbox_access_token">pk.eyJ1IjoibGVvbmhhcmt0aCIsImEiOiJjbHozc2F6cmwzcDg1MmlxbHNjdzdtcXIxIn0.oMVSwF1d0tGENq4tYW18fg</string>
+</resources>
