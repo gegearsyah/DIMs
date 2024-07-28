@@ -234,7 +234,7 @@ async def post_markers(data: Annotated[MarkerFeature,Body(
                             "electricOn": 0,
                             "isSanitation":0,
                             "imageUrl": "link",
-                            "Description":"this is flood"}
+                            "description":"this is flood"}
                         }
                     }
                 },
@@ -254,7 +254,7 @@ async def post_markers(data: Annotated[MarkerFeature,Body(
                             "pack": 1,
                             "medicineName": 0,
                             "imageUrl": "link",
-                            "Description":"This is drug"
+                            "description":"This is drug"
                             }
                         }
                     }
@@ -274,7 +274,7 @@ async def post_markers(data: Annotated[MarkerFeature,Body(
                             "phone_number": "08918",
                             "package": 1,
                             "imageUrl": "link",
-                            "Description":"this is food"}
+                            "description":"this is food"}
                         }
                     }
                 },
@@ -293,7 +293,7 @@ async def post_markers(data: Annotated[MarkerFeature,Body(
                             "phone_number": "08918",
                             "spaceAvailable": 1,
                             "imageUrl": "link",
-                            "Description":"this is food"}
+                            "description":"this is food"}
                         }
                     }
                 },
